@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+
+	<property name="FILE_LOGGING_PATTERN" value="%d{yyyy-MM-dd HH:mm:ss.SSS} ${LOG_LEVEL_PATTERN:-%5p} ${PID:- } --- [%t] %logger{39} : %msg%n" />
+	<property name="APP_LOGGING_PATTERN" value="${FILE_LOGGING_PATTERN}" />
+	<property name="FRAMEWORK_LOGGING_PATTERN" value="${FILE_LOGGING_PATTERN}" />
+	<property name="SECURITY_LOGGING_PATTERN" value="${FILE_LOGGING_PATTERN}" />
+    
+    
+	<springProperty name="DEMO_LOG_LEVEL" source="logging.loglevel.demo" defaultValue="DEBUG"/>
+	<springProperty name="SPRINGFRAMEWORK_LOG_LEVEL" source="logging.loglevel.springframework" defaultValue="DEBUG"/>
+	<springProperty name="APACHE_HTTP_WIRE_LOG_LEVEL" source="logging.loglevel.apachewire" defaultValue="DEBUG"/>
+	<springProperty name="ROOT_LOG_LEVEL" source="logging.loglevel.root" defaultValue="DEBUG"/>
+
+	<springProperty name="LOG_PATH" source="logging.file.path" defaultValue="logs" />
+	<springProperty name="APP" source="spring.application.name" />
+
+	<appender name="root-appender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="org.owasp.security.logging.filter.ExcludeClassifiedMarkerFilter" />
+		
+		<encoder>
+			<pattern>${APP_LOGGING_PATTERN}</pattern>
+		</encoder>
+		<file>${LOG_PATH}/${APP}-root.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/${APP}-debug-root.log.%d{yyyy-MM-dd}.log</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+	
+	
+
+	<appender name="framework-container-log" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="org.owasp.security.logging.filter.ExcludeClassifiedMarkerFilter" />
+		<encoder>
+			<pattern>${FRAMEWORK_LOGGING_PATTERN}</pattern>
+		</encoder>
+		<file>${LOG_PATH}/${APP}-framework.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/${APP}-framework.log.%d{yyyy-MM-dd}.log</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+
+	<appender name="application-log" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		
+		<encoder>
+			<pattern>${APP_LOGGING_PATTERN}</pattern>
+		</encoder>
+		<file>${LOG_PATH}/${APP}.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/${APP}-debug.log.%d{yyyy-MM-dd}.log</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+	
+
+
+	<appender name="security-log" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="org.owasp.security.logging.filter.SecurityMarkerFilter" />
+		<encoder>
+			<pattern>${SECURITY_LOGGING_PATTERN}</pattern>
+		</encoder>
+		<file>${LOG_PATH}/${APP}-security.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_PATH}/${APP}-security.log.%d{yyyy-MM-dd}.log
+			</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+
+
+	<!-- async wrappers -->
+
+	<appender name="async-framework-container-log" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="framework-container-log"/>
+		<neverBlock>true</neverBlock>
+		<maxFlushTime>1000</maxFlushTime>
+		<discardingThreshold>0</discardingThreshold>
+		<queueSize>500</queueSize>
+	</appender>
+
+	<appender name="async-application-log" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="application-log"/>
+		<neverBlock>true</neverBlock>
+		<maxFlushTime>1000</maxFlushTime>
+		<discardingThreshold>0</discardingThreshold>
+		<queueSize>500</queueSize>
+	</appender>
+
+	<appender name="async-root-appender" class="ch.qos.logback.classic.AsyncAppender">
+		<appender-ref ref="root-appender"/>
+		<neverBlock>true</neverBlock>
+		<maxFlushTime>1000</maxFlushTime>
+		<discardingThreshold>0</discardingThreshold>
+		<queueSize>500</queueSize>
+	</appender>
+
+	<!-- <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n
+            </Pattern>
+        </layout>
+    </appender> -->
+    
+	<!-- async wrappers end -->
+	<!-- <logger name="com.example" level="${DEMO_LOG_LEVEL}" additivity="false">
+        <appender-ref ref="CONSOLE"/>
+    </logger> -->
+	<logger name="org.springframework" level="${SPRINGFRAMEWORK_LOG_LEVEL}" additivity="false">
+		<appender-ref ref="async-framework-container-log" />
+	</logger>
+
+	<logger name="org.apache.http.wire" level="${APACHE_HTTP_WIRE_LOG_LEVEL}" additivity="false">
+		<appender-ref ref="async-framework-container-log" />
+		</logger>
+
+	<logger name="com.demo" level="${DEMO_LOG_LEVEL}" additivity="false">
+		<appender-ref ref="async-application-log" />
+	</logger>
+
+	<root level="${ROOT_LOG_LEVEL}">
+		<appender-ref ref="async-root-appender" />
+		<!-- <appender-ref ref="CONSOLE" /> -->
+	</root>
+
+
+</configuration>
